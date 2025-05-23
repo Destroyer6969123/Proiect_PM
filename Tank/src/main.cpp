@@ -77,25 +77,41 @@ void moveDiagonal(char a, char b) {
   stopMotors();
 
   if (a == 'A' && b == 'S') {
-    PORTD &= ~(1 << IN3);
+    PORTD |= (1 << IN2);  // Stânga înapoi
+    PORTD &= ~(1 << IN1);
+    PORTD |= (1 << IN3);  // Dreapta înainte
+    PORTD &= ~(1 << IN4);
+    OCR1A = speedPWM;
     OCR1B = speedPWM;
   } else if (a == 'A' && b == 'W') {
-    PORTD |= (1 << IN3);
+    PORTD |= (1 << IN1);  // Stânga înainte
+    PORTD &= ~(1 << IN2);
+    PORTD |= (1 << IN4);  // Dreapta înapoi
+    PORTD &= ~(1 << IN3);
+    OCR1A = speedPWM;
     OCR1B = speedPWM;
   } else if (a == 'D' && b == 'S') {
+    PORTD |= (1 << IN2);  // Stânga înapoi
     PORTD &= ~(1 << IN1);
+    PORTD |= (1 << IN4);  // Dreapta înapoi
+    PORTD &= ~(1 << IN3);
     OCR1A = speedPWM;
+    OCR1B = speedPWM;
   } else if (a == 'D' && b == 'W') {
-    PORTD |= (1 << IN1);
+    PORTD |= (1 << IN1);  // Stânga înainte
+    PORTD &= ~(1 << IN2);
+    PORTD |= (1 << IN3);  // Dreapta înainte
+    PORTD &= ~(1 << IN4);
     OCR1A = speedPWM;
+    OCR1B = speedPWM;
   }
 }
+
 
 void handleCommand(char cmd) {
   Serial.print("Comandă primită: ");
   Serial.println(cmd);
   char upper = toupper(cmd);
-  stopMotors();
 
   if (upper == 'E') {
     if (speedPWM < 255) speedPWM = min(speedPWM + 25, 255);
@@ -113,43 +129,55 @@ void handleCommand(char cmd) {
     return;
   }
 
-  if (upper == 'W') {
-    PORTD |= (1 << IN1) | (1 << IN3);
-    OCR1A = speedPWM;
-    OCR1B = speedPWM;
-    lastMotorCmd = millis();
-    motorsActive = true;
-  } else if (upper == 'S') {
-    PORTD |= (1 << IN2) | (1 << IN4);
-    OCR1A = speedPWM;
-    OCR1B = speedPWM;
-    lastMotorCmd = millis();
-    motorsActive = true;
-  } else if (upper == 'A') {
-    PORTD |= (1 << IN1) | (1 << IN3);
-    PORTD &= ~(1 << IN1);
-    PORTD |= (1 << IN3);
-    OCR1A = speedPWM;
-    OCR1B = speedPWM;
-    lastMotorCmd = millis();
-    motorsActive = true;
-  } else if (upper == 'D') {
-    PORTD |= (1 << IN1);
-    PORTD &= ~(1 << IN3);
-    OCR1A = speedPWM;
-    OCR1B = speedPWM;
-    lastMotorCmd = millis();
-    motorsActive = true;
-  }
-
+  // Tratare comenzi diagonale
   if ((lastChar == 'W' && (upper == 'A' || upper == 'D')) ||
-      (lastChar == 'S' && (upper == 'A' || upper == 'D'))) {
+      (lastChar == 'S' && (upper == 'A' || upper == 'D')) ||
+      (lastChar == 'A' && (upper == 'W' || upper == 'S')) ||
+      (lastChar == 'D' && (upper == 'W' || upper == 'S'))) {
     moveDiagonal(lastChar, upper);
     lastMotorCmd = millis();
     motorsActive = true;
-  } else {
-    lastChar = upper;
+    return;
   }
+
+  stopMotors();
+
+  if (upper == 'W') {
+    PORTD |= (1 << IN1);
+    PORTD &= ~(1 << IN2);
+    PORTD |= (1 << IN3);
+    PORTD &= ~(1 << IN4);
+    OCR1A = speedPWM;
+    OCR1B = speedPWM;
+    motorsActive = true;
+  } else if (upper == 'S') {
+    PORTD |= (1 << IN2);
+    PORTD &= ~(1 << IN1);
+    PORTD |= (1 << IN4);
+    PORTD &= ~(1 << IN3);
+    OCR1A = speedPWM;
+    OCR1B = speedPWM;
+    motorsActive = true;
+  } else if (upper == 'A') {
+    PORTD |= (1 << IN2);
+    PORTD &= ~(1 << IN1);
+    PORTD |= (1 << IN3);
+    PORTD &= ~(1 << IN4);
+    OCR1A = speedPWM;
+    OCR1B = speedPWM;
+    motorsActive = true;
+  } else if (upper == 'D') {
+    PORTD |= (1 << IN1);
+    PORTD &= ~(1 << IN2);
+    PORTD |= (1 << IN4);
+    PORTD &= ~(1 << IN3);
+    OCR1A = speedPWM;
+    OCR1B = speedPWM;
+    motorsActive = true;
+  }
+
+  lastMotorCmd = millis();
+  lastChar = upper;
 
   switch (upper) {
     case 'I': case 'K': case 'J': case 'L':
